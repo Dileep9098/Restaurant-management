@@ -1856,10 +1856,6 @@ export const downloadInvoice = async (req, res) => {
         ${itemsHTML}
 
         <div class="bold center">SUMMARY</div>
-<<<<<<< HEAD
-=======
-
->>>>>>> a790a8786bcd2433ea81a5070db55d0637053391
         <div class="divider"></div>
 
         <div class="row">
