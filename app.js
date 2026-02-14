@@ -200,10 +200,29 @@ app.use(express.json());
 app.use(helmet());
 app.use(cookieParser());
 
+// app.use(cors({
+//   credentials: true,
+//   origin: "https://7jq23dd6-5173.inc1.devtunnels.ms" || "http://localhost:5173",
+//   // origin: "http://localhost:5173/" || `https://7jq23dd6-5173.inc1.devtunnels.ms/`,
+// }));
+
+
+
 app.use(cors({
   credentials: true,
-  origin: "http://localhost:5173" || `https://7jq23dd6-5173.inc1.devtunnels.ms/`,
+  origin: function (origin, callback) {
+    const devtunnel = "https://7jq23dd6-5173.inc1.devtunnels.ms";
+    const localhost = "http://localhost:5173";
+
+    if (origin === devtunnel || origin === localhost || !origin) {
+      // !origin allows tools like Postman or server-side requests
+      callback(null, origin || localhost);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  }
 }));
+
 
 // app.use(express.static(path.join(__dirname, "/bulk-message/dist")));
 // app.use('/upload', express.static(path.join(__dirname, 'upload')));

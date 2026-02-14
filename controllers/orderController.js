@@ -1100,208 +1100,625 @@ export const getMyOrder = async (req, res) => {
 
 // controllers/invoiceController.js
 
-import puppeteer from "puppeteer";
+// import puppeteer from "puppeteer";
+// export const downloadInvoice = async (req, res) => {
+//     try {
+//         const { id } = req.params;
 
+//         const order = await Order.findById(id)
+//             .populate("restaurant")
+//             .populate("table");
 
+//         console.log("Bhai mere ek baar batao  ki ORder kya tha", order)
+
+//         if (!order) {
+//             return res.status(404).json({ message: "Order not found" });
+//         }
+
+//         const itemsHTML = order.items.map((item, index) => {
+
+//             const basePrice = item.basePrice;
+//             const totalQuantity = item.variants?.reduce((acc, v) => {
+//                 return acc + (Number(v.quantity) || 0);
+//             }, 0) || 0;
+
+//             const variantsHTML = item.variants?.map(v =>
+//                 `
+//         <div class="row small">
+//           <div class="indent">
+//             ↳ ${v.name} (x${v.quantity})
+//           </div>
+//           <div>
+//             ₹${(v.price * v.quantity).toFixed(2)}
+//           </div>
+//         </div>
+//       `).join("") || "";
+
+//             return `
+//         <div class="item-name">${index + 1}. ${item.name}</div>
+
+//         <div class="row small">
+//           <div>${totalQuantity ? totalQuantity : item.quantity} x ₹${basePrice.toFixed(2)}</div>
+//           <div>₹${totalQuantity ? (totalQuantity * basePrice).toFixed(2) : item.totalPrice.toFixed(2)}</div>
+//         </div>
+
+//         ${variantsHTML}
+
+//         <div class="divider"></div>
+//       `;
+//         }).join("");
+
+//         const html = `
+// <html>
+// <head>
+//   <style>
+//     body {
+//       font-family: monospace;
+//       background: #fff;
+//       margin: 0;
+//       padding: 10px;
+//     }
+
+//     .invoice {
+//       width: 300px;
+//       margin: auto;
+//       font-size: 12px;
+//       color: #000;
+//       line-height: 1.5;
+//     }
+
+//     .center { text-align: center; }
+//     .right { text-align: right; }
+//     .bold { font-weight: bold; }
+
+//     .divider {
+//       border-top: 1px dashed #000;
+//       margin: 6px 0;
+//     }
+
+//     .row {
+//       display: flex;
+//       justify-content: space-between;
+//     }
+
+//     .item-name {
+//       margin-top: 6px;
+//       font-weight: bold;
+//     }
+
+//     .small {
+//       font-size: 11px;
+//     }
+
+//     .total {
+//       font-weight: bold;
+//       font-size: 14px;
+//     }
+
+//     .indent {
+//       padding-left: 10px;
+//     }
+
+//   </style>
+// </head>
+
+// <body>
+
+// <div class="invoice">
+
+//   <div class="center bold">
+//     ${order.restaurant?.name}
+//   </div>
+
+//   <div class="center small">
+//     ${order.restaurant?.address || ""}
+//   </div>
+
+//   <div class="center small">
+//     GSTIN: ${order.restaurant?.gstNumber || "-"}
+//   </div>
+
+//   <div class="divider"></div>
+
+//   <div class="center bold">TAX INVOICE</div>
+
+//   <div class="divider"></div>
+
+//   <div class="row">
+//     <div>Invoice #:</div>
+//     <div>${order.orderNumber}</div>
+//   </div>
+
+//   <div class="row">
+//     <div>Date:</div>
+//     <div>${new Date(order.createdAt).toLocaleDateString()}</div>
+//   </div>
+
+//   <div class="divider"></div>
+
+//   <div class="bold">BILLED TO</div>
+//   <div>${order.customer?.name || "Walk-in Customer"}</div>
+//   <div class="small">${order.customer?.phone || ""}</div>
+
+//   <div class="divider"></div>
+
+//   ${itemsHTML}
+
+//   <div class="bold center">SUMMARY</div>
+
+//   <div class="divider"></div>
+
+//   <div class="row">
+//     <div>Taxable Amount</div>
+//     <div>₹${order.subTotal?.toFixed(2)}</div>
+//   </div>
+
+//   <div class="row">
+//     <div>Add: GST</div>
+//     <div>₹${order.taxAmount?.toFixed(2) || "0.00"}</div>
+//   </div>
+
+//   <div class="divider"></div>
+
+//   <div class="row total">
+//     <div>Grand Total</div>
+//     <div>₹${order.grandTotal?.toFixed(2)}</div>
+//   </div>
+
+//   <div class="divider"></div>
+
+//   <div class="center small">
+//     Thank You For Your Business<br/>
+//     Visit Again 🙏
+//   </div>
+
+// </div>
+
+// </body>
+// </html>
+// `;
+
+//         // const browser = await puppeteer.launch();
+//        const browser = await puppeteer.launch({
+//     headless: true,
+//     args: [
+//         "--no-sandbox",
+//         "--disable-setuid-sandbox",
+//         "--disable-dev-shm-usage",
+//         "--single-process"
+//     ]
+// });
+//         const page = await browser.newPage();
+
+//         await page.setContent(html, { waitUntil: "domcontentloaded" });
+
+//         const pdf = await page.pdf({
+//             width: "80mm",
+//             printBackground: true
+//         });
+
+//         await browser.close();
+
+//         res.set({
+//             "Content-Type": "application/pdf",
+//             "Content-Disposition": `attachment; filename=Invoice-${order.orderNumber}.pdf`
+//         });
+
+//         res.send(pdf);
+
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: "Invoice generation failed" });
+//     }
+// };
+
+import puppeteerCore from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
+// export const downloadInvoice = async (req, res) => {
+//   let browser;
+
+//   try {
+//     const { id } = req.params;
+
+//     const order = await Order.findById(id)
+//       .populate("restaurant")
+//       .populate("table");
+
+//     if (!order) {
+//       return res.status(404).json({ message: "Order not found" });
+//     }
+
+//     // ===== SAFE ITEM HTML =====
+//     const itemsHTML = order.items.map((item, index) => {
+
+//       const basePrice = Number(item.basePrice) || 0;
+
+//       const totalQuantity =
+//         item.variants?.reduce((acc, v) => {
+//           return acc + (Number(v.quantity) || 0);
+//         }, 0) || Number(item.quantity) || 0;
+
+//       const variantsHTML =
+//         item.variants?.map(v => `
+//           <div class="row small">
+//             <div class="indent">
+//               ↳ ${v.name} (x${v.quantity})
+//             </div>
+//             <div>
+//               ₹${(Number(v.price || 0) * Number(v.quantity || 0)).toFixed(2)}
+//             </div>
+//           </div>
+//         `).join("") || "";
+
+//       const itemTotal =
+//         totalQuantity > 0
+//           ? totalQuantity * basePrice
+//           : Number(item.totalPrice) || 0;
+
+//       return `
+//         <div class="item-name">${index + 1}. ${item.name}</div>
+
+//         <div class="row small">
+//           <div>${totalQuantity} x ₹${basePrice.toFixed(2)}</div>
+//           <div>₹${itemTotal.toFixed(2)}</div>
+//         </div>
+
+//         ${variantsHTML}
+//         <div class="divider"></div>
+//       `;
+//     }).join("");
+
+//     // ===== HTML TEMPLATE =====
+//     const html = `
+//     <html>
+//     <head>
+//       <style>
+//         body {
+//           font-family: monospace;
+//           background: #fff;
+//           margin: 0;
+//           padding: 10px;
+//         }
+
+//         .invoice {
+//           width: 280px;
+//           margin: auto;
+//           font-size: 12px;
+//           color: #000;
+//           line-height: 1.5;
+//         }
+
+//         .center { text-align: center; }
+//         .bold { font-weight: bold; }
+
+//         .divider {
+//           border-top: 1px dashed #000;
+//           margin: 6px 0;
+//         }
+
+//         .row {
+//           display: flex;
+//           justify-content: space-between;
+//         }
+
+//         .item-name {
+//           margin-top: 6px;
+//           font-weight: bold;
+//         }
+
+//         .small { font-size: 11px; }
+//         .total {
+//           font-weight: bold;
+//           font-size: 14px;
+//         }
+
+//         .indent { padding-left: 10px; }
+//       </style>
+//     </head>
+
+//     <body>
+//       <div class="invoice">
+
+//         <div class="center bold">
+//           ${order.restaurant?.name || ""}
+//         </div>
+
+//         <div class="center small">
+//           ${order.restaurant?.address || ""}
+//         </div>
+
+//         <div class="center small">
+//           GSTIN: ${order.restaurant?.gstNumber || "-"}
+//         </div>
+
+//         <div class="divider"></div>
+
+//         <div class="center bold">TAX INVOICE</div>
+
+//         <div class="divider"></div>
+
+//         <div class="row">
+//           <div>Invoice #:</div>
+//           <div>${order.orderNumber}</div>
+//         </div>
+
+//         <div class="row">
+//           <div>Date:</div>
+//           <div>${new Date(order.createdAt).toLocaleDateString()}</div>
+//         </div>
+
+//         <div class="divider"></div>
+
+//         <div class="bold">BILLED TO</div>
+//         <div>${order.customer?.name || "Walk-in Customer"}</div>
+//         <div class="small">${order.customer?.phone || ""}</div>
+
+//         <div class="divider"></div>
+
+//         ${itemsHTML}
+
+//         <div class="bold center">SUMMARY</div>
+
+//         <div class="divider"></div>
+
+//         <div class="row">
+//           <div>Taxable Amount</div>
+//           <div>₹${Number(order.subTotal || 0).toFixed(2)}</div>
+//         </div>
+
+//         <div class="row">
+//           <div>Add: GST</div>
+//           <div>₹${Number(order.taxAmount || 0).toFixed(2)}</div>
+//         </div>
+
+//         <div class="divider"></div>
+
+//         <div class="row total">
+//           <div>Grand Total</div>
+//           <div>₹${Number(order.grandTotal || 0).toFixed(2)}</div>
+//         </div>
+
+//         <div class="divider"></div>
+
+//         <div class="center small">
+//           Thank You For Your Business<br/>
+//           Visit Again 🙏
+//         </div>
+
+//       </div>
+//     </body>
+//     </html>
+//     `;
+
+//     // ===== LAUNCH BROWSER (WINDOWS SAFE) =====
+//     browser = await puppeteer.launch({
+//       headless: "new"
+//     });
+
+//     const page = await browser.newPage();
+
+//     await page.setContent(html, { waitUntil: "networkidle0" });
+
+//     const pdf = await page.pdf({
+//       width: "80mm",
+//       printBackground: true,
+//       margin: {
+//         top: "5mm",
+//         bottom: "5mm",
+//         left: "5mm",
+//         right: "5mm"
+//       }
+//     });
+
+//     await browser.close();
+
+//     res.set({
+//       "Content-Type": "application/pdf",
+//       "Content-Disposition": `attachment; filename=Invoice-${order.orderNumber}.pdf`
+//     });
+
+//     return res.send(pdf);
+
+//   } catch (error) {
+//     console.error("PDF ERROR:", error);
+
+//     if (browser) {
+//       await browser.close();
+//     }
+
+//     return res.status(500).json({
+//       message: "Invoice generation failed"
+//     });
+//   }
+// };
 
 export const downloadInvoice = async (req, res) => {
-    try {
-        const { id } = req.params;
+  let browser;
 
-        const order = await Order.findById(id)
-            .populate("restaurant")
-            .populate("table");
+  try {
+    const { id } = req.params;
 
-        console.log("Bhai mere ek baar batao  ki ORder kya tha", order)
+    const order = await Order.findById(id)
+      .populate("restaurant")
+      .populate("table");
 
-        if (!order) {
-            return res.status(404).json({ message: "Order not found" });
-        }
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
 
-        const itemsHTML = order.items.map((item, index) => {
+    // ================= ITEM HTML =================
+    const itemsHTML = order.items.map((item, index) => {
 
-            const basePrice = item.basePrice;
-            const totalQuantity = item.variants?.reduce((acc, v) => {
-                return acc + (Number(v.quantity) || 0);
-            }, 0) || 0;
+      const basePrice = Number(item.basePrice) || 0;
 
-            const variantsHTML = item.variants?.map(v =>
-                `
-        <div class="row small">
-          <div class="indent">
-            ↳ ${v.name} (x${v.quantity})
+      const totalQuantity =
+        item.variants?.reduce((acc, v) => acc + (Number(v.quantity) || 0), 0)
+        || Number(item.quantity) || 0;
+
+      const variantsHTML =
+        item.variants?.map(v => `
+          <div class="row small">
+            <div class="indent">
+              ↳ ${v.name} (x${v.quantity})
+            </div>
+            <div>
+              ₹${(Number(v.price || 0) * Number(v.quantity || 0)).toFixed(2)}
+            </div>
           </div>
-          <div>
-            ₹${(v.price * v.quantity).toFixed(2)}
-          </div>
-        </div>
-      `).join("") || "";
+        `).join("") || "";
 
-            return `
+      const itemTotal =
+        totalQuantity > 0
+          ? totalQuantity * basePrice
+          : Number(item.totalPrice) || 0;
+
+      return `
         <div class="item-name">${index + 1}. ${item.name}</div>
 
         <div class="row small">
-          <div>${ totalQuantity?totalQuantity:item.quantity} x ₹${basePrice.toFixed(2)}</div>
-          <div>₹${totalQuantity?(totalQuantity*basePrice).toFixed(2):item.totalPrice.toFixed(2) }</div>
+          <div>${totalQuantity} x ₹${basePrice.toFixed(2)}</div>
+          <div>₹${itemTotal.toFixed(2)}</div>
         </div>
 
         ${variantsHTML}
-
         <div class="divider"></div>
       `;
-        }).join("");
+    }).join("");
 
-        const html = `
-<html>
-<head>
-  <style>
-    body {
-      font-family: monospace;
-      background: #fff;
-      margin: 0;
-      padding: 10px;
+    // ================= HTML TEMPLATE =================
+    const html = `<!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8" />
+      <style>
+        body { font-family: monospace; margin:0; padding:10px; }
+        .invoice { width:280px; margin:auto; font-size:12px; }
+        .center { text-align:center; }
+        .bold { font-weight:bold; }
+        .divider { border-top:1px dashed #000; margin:6px 0; }
+        .row { display:flex; justify-content:space-between; }
+        .item-name { margin-top:6px; font-weight:bold; }
+        .small { font-size:11px; }
+        .total { font-weight:bold; font-size:14px; }
+        .indent { padding-left:10px; }
+      </style>
+    </head>
+    <body>
+      <div class="invoice">
+
+        <div class="center bold">
+          ${order.restaurant?.name || ""}
+        </div>
+
+        <div class="center small">
+          ${order.restaurant?.address || ""}
+        </div>
+
+        <div class="center small">
+          GSTIN: ${order.restaurant?.gstNumber || "-"}
+        </div>
+
+        <div class="divider"></div>
+        <div class="center bold">TAX INVOICE</div>
+        <div class="divider"></div>
+
+        <div class="row">
+          <div>Invoice #:</div>
+          <div>${order.orderNumber}</div>
+        </div>
+
+        <div class="row">
+          <div>Date:</div>
+          <div>${new Date(order.createdAt).toLocaleDateString()}</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="bold">BILLED TO</div>
+        <div>${order.customer?.name || "Walk-in Customer"}</div>
+        <div class="small">${order.customer?.phone || ""}</div>
+
+        <div class="divider"></div>
+
+        ${itemsHTML}
+
+        <div class="bold center">SUMMARY</div>
+        <div class="divider"></div>
+
+        <div class="row">
+          <div>Taxable Amount</div>
+          <div>₹${Number(order.subTotal || 0).toFixed(2)}</div>
+        </div>
+
+        <div class="row">
+          <div>Add: GST</div>
+          <div>₹${Number(order.taxAmount || 0).toFixed(2)}</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="row total">
+          <div>Grand Total</div>
+          <div>₹${Number(order.grandTotal || 0).toFixed(2)}</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="center small">
+          Thank You For Your Business<br/>
+          Visit Again 🙏
+        </div>
+
+      </div>
+    </body>
+    </html>`;
+
+    // ================= BROWSER LAUNCH (AUTO DETECT ENV) =================
+    if (process.env.NODE_ENV === "production") {
+    //   const chromium = (await import("@sparticuz/chromium")).default;
+    //   const puppeteerCore = (await import("puppeteer-core")).default;
+
+      browser = await puppeteerCore.launch({
+        args: chromium.args,
+        executablePath: await chromium.executablePath(),
+        headless: chromium.headless,
+        defaultViewport: chromium.defaultViewport,
+      });
+
+    } else {
+      const puppeteer = (await import("puppeteer")).default;
+
+      browser = await puppeteer.launch({
+        headless: "new",
+      });
     }
 
-    .invoice {
-      width: 300px;
-      margin: auto;
-      font-size: 12px;
-      color: #000;
-      line-height: 1.5;
-    }
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "networkidle0" });
 
-    .center { text-align: center; }
-    .right { text-align: right; }
-    .bold { font-weight: bold; }
+    const pdf = await page.pdf({
+      width: "80mm",
+      printBackground: true,
+      margin: {
+        top: "5mm",
+        bottom: "5mm",
+        left: "5mm",
+        right: "5mm",
+      },
+    });
 
-    .divider {
-      border-top: 1px dashed #000;
-      margin: 6px 0;
-    }
+    await browser.close();
 
-    .row {
-      display: flex;
-      justify-content: space-between;
-    }
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename=Invoice-${order.orderNumber}.pdf`,
+    });
 
-    .item-name {
-      margin-top: 6px;
-      font-weight: bold;
-    }
+    return res.send(pdf);
 
-    .small {
-      font-size: 11px;
-    }
-
-    .total {
-      font-weight: bold;
-      font-size: 14px;
-    }
-
-    .indent {
-      padding-left: 10px;
-    }
-
-  </style>
-</head>
-
-<body>
-
-<div class="invoice">
-
-  <div class="center bold">
-    ${order.restaurant?.name}
-  </div>
-
-  <div class="center small">
-    ${order.restaurant?.address || ""}
-  </div>
-
-  <div class="center small">
-    GSTIN: ${order.restaurant?.gstNumber || "-"}
-  </div>
-
-  <div class="divider"></div>
-
-  <div class="center bold">TAX INVOICE</div>
-
-  <div class="divider"></div>
-
-  <div class="row">
-    <div>Invoice #:</div>
-    <div>${order.orderNumber}</div>
-  </div>
-
-  <div class="row">
-    <div>Date:</div>
-    <div>${new Date(order.createdAt).toLocaleDateString()}</div>
-  </div>
-
-  <div class="divider"></div>
-
-  <div class="bold">BILLED TO</div>
-  <div>${order.customer?.name || "Walk-in Customer"}</div>
-  <div class="small">${order.customer?.phone || ""}</div>
-
-  <div class="divider"></div>
-
-  ${itemsHTML}
-
-  <div class="bold center">SUMMARY</div>
-
-  <div class="divider"></div>
-
-  <div class="row">
-    <div>Taxable Amount</div>
-    <div>₹${order.subTotal?.toFixed(2)}</div>
-  </div>
-
-  <div class="row">
-    <div>Add: GST</div>
-    <div>₹${order.taxAmount?.toFixed(2) || "0.00"}</div>
-  </div>
-
-  <div class="divider"></div>
-
-  <div class="row total">
-    <div>Grand Total</div>
-    <div>₹${order.grandTotal?.toFixed(2)}</div>
-  </div>
-
-  <div class="divider"></div>
-
-  <div class="center small">
-    Thank You For Your Business<br/>
-    Visit Again 🙏
-  </div>
-
-</div>
-
-</body>
-</html>
-`;
-
-        const browser = await puppeteer.launch();
-        const page = await browser.newPage();
-
-        await page.setContent(html, { waitUntil: "domcontentloaded" });
-
-        const pdf = await page.pdf({
-            width: "80mm",
-            printBackground: true
-        });
-
-        await browser.close();
-
-        res.set({
-            "Content-Type": "application/pdf",
-            "Content-Disposition": `attachment; filename=Invoice-${order.orderNumber}.pdf`
-        });
-
-        res.send(pdf);
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Invoice generation failed" });
-    }
+  } catch (error) {
+    console.error("PDF ERROR:", error);
+    if (browser) await browser.close();
+    return res.status(500).json({ message: "Invoice generation failed" });
+  }
 };
