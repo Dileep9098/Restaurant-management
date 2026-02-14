@@ -202,7 +202,8 @@ app.use(cookieParser());
 
 app.use(cors({
   credentials: true,
-  origin: "https://7jq23dd6-5173.inc1.devtunnels.ms" || `https://7jq23dd6-5173.inc1.devtunnels.ms/`,
+  origin: "https://7jq23dd6-5173.inc1.devtunnels.ms" || "http://localhost:5173",
+  // origin: "https://7jq23dd6-5173.inc1.devtunnels.ms" || `https://7jq23dd6-5173.inc1.devtunnels.ms/`,
 }));
 
 // app.use(express.static(path.join(__dirname, "/bulk-message/dist")));
