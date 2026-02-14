@@ -8,7 +8,6 @@
     "start": "nodemon backend/server.js",
     "dev": "nodemon backend/server.js",
     "seed": "node seed.js",
-    "postinstall": "npx puppeteer browsers install chrome"
 
   },
   "keywords": [],
