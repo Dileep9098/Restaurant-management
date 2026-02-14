@@ -937,7 +937,7 @@ export const placeOrder = async (req, res) => {
             sameSite: "none",
             secure: true,
 
-            sameSite: "lax",
+            sameSite: "none",
             maxAge: 1000 * 60 * 60 * 3
         });
 
