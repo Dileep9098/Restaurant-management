@@ -934,8 +934,9 @@ export const placeOrder = async (req, res) => {
         }
 
         res.cookie("orderToken", orderAccessToken, {
-            httpOnly: true,
-            secure: false,
+            sameSite: "none",
+            secure: true,
+
             sameSite: "lax",
             maxAge: 1000 * 60 * 60 * 3
         });
