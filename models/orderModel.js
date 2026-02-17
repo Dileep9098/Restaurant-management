@@ -223,8 +223,12 @@ const orderSchema = new mongoose.Schema({
   orderAccessToken: {
     type: String,
     required: true
-  }
-  ,
+  },
+
+  preparationTime: {
+    type: Number, // in minutes
+    default: 0
+  },
 
   paymentStatus: {
     type: String,

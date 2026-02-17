@@ -682,6 +682,14 @@ import crypto from "crypto";
 import PDFDocument from "pdfkit";
 import fs from "fs";
 
+import puppeteerCore from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
+import { getIO } from "../socket/socket.js";
+// import { io } from "../server.js";
+
+// getIO
+
+
 // export const placeOrder = async (req, res) => {
 //     try {
 //         const {
@@ -783,187 +791,363 @@ import fs from "fs";
 
 
 
+// export const placeOrder = async (req, res) => {
+//     try {
+//         const {
+//             restaurant,
+//             table,
+//             items,
+//             orderType,
+//             subTotal,
+//             taxAmount,
+//             grandTotal
+//         } = req.body;
+
+//         const existingToken = req.cookies?.orderToken;
+
+//         if (!restaurant || !items?.length) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "Invalid order data"
+//             });
+//         }
+
+//         /* ===================================================
+//            🔎 FORMAT ITEMS FROM DATABASE (IMPORTANT FIX)
+//         ==================================================== */
+
+//         const formattedItems = [];
+
+//         for (const cartItem of items) {
+
+//             const dbItem = await MenuItem.findById(cartItem.itemId);
+
+//             if (!dbItem) continue;
+
+//             const formattedVariants = [];
+
+//             if (cartItem.variants?.length) {
+//                 for (const v of cartItem.variants) {
+
+//                     const dbVariant = await Variant.findById(v.variantId);
+//                     if (!dbVariant) continue;
+
+//                     formattedVariants.push({
+//                         variantId: dbVariant._id,
+//                         name: dbVariant.name,
+//                         price: dbVariant.price,
+//                         quantity: v.quantity || 1
+//                     });
+//                 }
+//             }
+
+//             formattedItems.push({
+//                 itemId: dbItem._id,
+//                 name: dbItem.name,
+//                 image: dbItem.image || [],  // ✅ IMAGE FIXED
+//                 basePrice: dbItem.basePrice,
+//                 quantity: cartItem.quantity || 1,
+//                 variants: formattedVariants,
+//                 totalPrice: cartItem.totalPrice || 0
+//             });
+//         }
+
+//         /* ===================================================
+//            🔁 CHECK EXISTING ORDER BY TOKEN
+//         ==================================================== */
+
+//         let order = null;
+
+//         if (existingToken) {
+//             order = await Order.findOne({
+//                 orderAccessToken: existingToken,
+//                 orderStatus: { $nin: ["COMPLETED", "CANCELLED"] }
+//             });
+//         }
+
+//         /* ===================================================
+//            🔄 UPDATE EXISTING ORDER
+//         ==================================================== */
+
+
+//         console.log("Bhai mere Order Kya aa rha hai", order)
+//         console.log("Bhai mere formattedItems Kya aa rha hai", formattedItems)
+
+//         if (order) {
+
+//             for (const newItem of formattedItems) {
+
+//                 const existingIndex = order.items.findIndex(
+//                     (i) =>
+//                         i.itemId.toString() === newItem.itemId.toString() &&
+//                         JSON.stringify(i.variants || []) ===
+//                         JSON.stringify(newItem.variants || [])
+//                 );
+
+//                 if (existingIndex > -1) {
+//                     order.items[existingIndex].quantity += newItem.quantity;
+//                     // order.items[existingIndex].grandTotal += grandTotal;
+//                     // order.items[existingIndex].subTotal += subTotal;
+//                 } else {
+//                     order.items.push(newItem);
+//                 }
+//             }
+
+//             order.subTotal += Number(subTotal);
+//             order.taxAmount += Number(taxAmount);
+//             order.grandTotal += Number(grandTotal);
+
+//             await order.save();
+//             getIO.to(`restaurant_${restaurant}`).emit("orderUpdated", order);
+
+
+//             return res.status(200).json({
+//                 success: true,
+//                 message: "Order updated successfully",
+//                 order
+//             });
+//         }
+
+//         /* ===================================================
+//            🆕 CREATE NEW ORDER
+//         ==================================================== */
+
+//         const lastOrder = await Order.findOne().sort({ createdAt: -1 });
+
+//         let nextNumber = 1;
+
+//         if (lastOrder?.orderNumber) {
+//             const lastNum = parseInt(
+//                 lastOrder.orderNumber.replace("#ORDER", "")
+//             );
+//             nextNumber = lastNum + 1;
+//         }
+
+//         const orderNumber = `#ORDER${String(nextNumber).padStart(4, "0")}`;
+
+//         const orderAccessToken = crypto.randomBytes(32).toString("hex");
+
+//         const newOrder = await Order.create({
+//             orderNumber,
+//             restaurant,
+//             table: table || null,
+//             orderType: orderType || "DINE_IN",
+//             items: formattedItems,
+//             subTotal: Number(subTotal),
+//             taxAmount: Number(taxAmount),
+//             grandTotal: Number(grandTotal),
+//             orderAccessToken
+//         });
+
+//         if (table) {
+//             await Table.findByIdAndUpdate(table, { status: "occupied" });
+//         }
+
+//         getIO.to(`restaurant_${restaurant}`).emit("newOrder", newOrder);
+
+//         res.cookie("orderToken", orderAccessToken, {
+//             sameSite: "none",
+//             secure: true,
+
+//             sameSite: "none",
+//             maxAge: 1000 * 60 * 60 * 3
+//         });
+
+//         return res.status(201).json({
+//             success: true,
+//             message: "Order created successfully",
+//             order: newOrder
+//         });
+
+//     } catch (error) {
+//         console.error("Place Order Error:", error);
+//         return res.status(500).json({
+//             success: false,
+//             message: error.message
+//         });
+//     }
+// };
+
+
+
 export const placeOrder = async (req, res) => {
-    try {
-        const {
-            restaurant,
-            table,
-            items,
-            orderType,
-            subTotal,
-            taxAmount,
-            grandTotal
-        } = req.body;
+  try {
+    const {
+      restaurant,
+      table,
+      items,
+      orderType,
+      subTotal,
+      taxAmount,
+      grandTotal
+    } = req.body;
 
-        const existingToken = req.cookies?.orderToken;
+    const existingToken = req.cookies?.orderToken;
 
-        if (!restaurant || !items?.length) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid order data"
-            });
-        }
-
-        /* ===================================================
-           🔎 FORMAT ITEMS FROM DATABASE (IMPORTANT FIX)
-        ==================================================== */
-
-        const formattedItems = [];
-
-        for (const cartItem of items) {
-
-            const dbItem = await MenuItem.findById(cartItem.itemId);
-
-            if (!dbItem) continue;
-
-            const formattedVariants = [];
-
-            if (cartItem.variants?.length) {
-                for (const v of cartItem.variants) {
-
-                    const dbVariant = await Variant.findById(v.variantId);
-                    if (!dbVariant) continue;
-
-                    formattedVariants.push({
-                        variantId: dbVariant._id,
-                        name: dbVariant.name,
-                        price: dbVariant.price,
-                        quantity: v.quantity || 1
-                    });
-                }
-            }
-
-            formattedItems.push({
-                itemId: dbItem._id,
-                name: dbItem.name,
-                image: dbItem.image || [],  // ✅ IMAGE FIXED
-                basePrice: dbItem.basePrice,
-                quantity: cartItem.quantity || 1,
-                variants: formattedVariants,
-                totalPrice: cartItem.totalPrice || 0
-            });
-        }
-
-        /* ===================================================
-           🔁 CHECK EXISTING ORDER BY TOKEN
-        ==================================================== */
-
-        let order = null;
-
-        if (existingToken) {
-            order = await Order.findOne({
-                orderAccessToken: existingToken,
-                orderStatus: { $nin: ["COMPLETED", "CANCELLED"] }
-            });
-        }
-
-        /* ===================================================
-           🔄 UPDATE EXISTING ORDER
-        ==================================================== */
-
-
-        console.log("Bhai mere Order Kya aa rha hai", order)
-        console.log("Bhai mere formattedItems Kya aa rha hai", formattedItems)
-
-        if (order) {
-
-            for (const newItem of formattedItems) {
-
-                const existingIndex = order.items.findIndex(
-                    (i) =>
-                        i.itemId.toString() === newItem.itemId.toString() &&
-                        JSON.stringify(i.variants || []) ===
-                        JSON.stringify(newItem.variants || [])
-                );
-
-                if (existingIndex > -1) {
-                    order.items[existingIndex].quantity += newItem.quantity;
-                    // order.items[existingIndex].grandTotal += grandTotal;
-                    // order.items[existingIndex].subTotal += subTotal;
-                } else {
-                    order.items.push(newItem);
-                }
-            }
-
-            order.subTotal += Number(subTotal);
-            order.taxAmount += Number(taxAmount);
-            order.grandTotal += Number(grandTotal);
-
-            await order.save();
-
-            return res.status(200).json({
-                success: true,
-                message: "Order updated successfully",
-                order
-            });
-        }
-
-        /* ===================================================
-           🆕 CREATE NEW ORDER
-        ==================================================== */
-
-        const lastOrder = await Order.findOne().sort({ createdAt: -1 });
-
-        let nextNumber = 1;
-
-        if (lastOrder?.orderNumber) {
-            const lastNum = parseInt(
-                lastOrder.orderNumber.replace("#ORDER", "")
-            );
-            nextNumber = lastNum + 1;
-        }
-
-        const orderNumber = `#ORDER${String(nextNumber).padStart(4, "0")}`;
-
-        const orderAccessToken = crypto.randomBytes(32).toString("hex");
-
-        const newOrder = await Order.create({
-            orderNumber,
-            restaurant,
-            table: table || null,
-            orderType: orderType || "DINE_IN",
-            items: formattedItems,
-            subTotal: Number(subTotal),
-            taxAmount: Number(taxAmount),
-            grandTotal: Number(grandTotal),
-            orderAccessToken
-        });
-
-        if (table) {
-            await Table.findByIdAndUpdate(table, { status: "occupied" });
-        }
-
-        res.cookie("orderToken", orderAccessToken, {
-            sameSite: "none",
-            secure: true,
-
-            sameSite: "none",
-            maxAge: 1000 * 60 * 60 * 3
-        });
-
-        return res.status(201).json({
-            success: true,
-            message: "Order created successfully",
-            order: newOrder
-        });
-
-    } catch (error) {
-        console.error("Place Order Error:", error);
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
+    if (!restaurant || !items?.length) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid order data"
+      });
     }
+
+    const formattedItems = [];
+
+    for (const cartItem of items) {
+      const dbItem = await MenuItem.findById(cartItem.itemId);
+      if (!dbItem) continue;
+
+      const formattedVariants = [];
+
+      if (cartItem.variants?.length) {
+        for (const v of cartItem.variants) {
+          const dbVariant = await Variant.findById(v.variantId);
+          if (!dbVariant) continue;
+
+          formattedVariants.push({
+            variantId: dbVariant._id,
+            name: dbVariant.name,
+            price: dbVariant.price,
+            quantity: v.quantity || 1
+          });
+        }
+      }
+
+      formattedItems.push({
+        itemId: dbItem._id,
+        name: dbItem.name,
+        image: dbItem.image || [],
+        basePrice: dbItem.basePrice,
+        quantity: cartItem.quantity || 1,
+        variants: formattedVariants,
+        totalPrice: cartItem.totalPrice || 0
+      });
+    }
+
+    let order = null;
+
+    if (existingToken) {
+      order = await Order.findOne({
+        orderAccessToken: existingToken,
+        orderStatus: { $nin: ["COMPLETED", "CANCELLED"] }
+      });
+    }
+
+    const io = getIO(); // ✅ IMPORTANT
+
+    /* ===================================================
+       UPDATE EXISTING ORDER
+    ==================================================== */
+
+    if (order) {
+      for (const newItem of formattedItems) {
+        const existingIndex = order.items.findIndex(
+          (i) =>
+            i.itemId.toString() === newItem.itemId.toString() &&
+            JSON.stringify(i.variants || []) ===
+            JSON.stringify(newItem.variants || [])
+        );
+
+        if (existingIndex > -1) {
+          order.items[existingIndex].quantity += newItem.quantity;
+        } else {
+          order.items.push(newItem);
+        }
+      }
+
+      order.subTotal += Number(subTotal);
+      order.taxAmount += Number(taxAmount);
+      order.grandTotal += Number(grandTotal);
+
+      await order.save();
+
+      // 🔥 Emit to restaurant room
+      io.to(`restaurant_${restaurant}`)
+        .emit("orderUpdated", order);
+
+      // 🔥 Emit to user room (if logged in system use)
+      if (order.user) {
+        io.to(`user_${order.user}`)
+          .emit("orderUpdated", order);
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Order updated successfully",
+        order
+      });
+    }
+
+    /* ===================================================
+       CREATE NEW ORDER
+    ==================================================== */
+
+    const lastOrder = await Order.findOne().sort({ createdAt: -1 });
+
+    let nextNumber = 1;
+    if (lastOrder?.orderNumber) {
+      const lastNum = parseInt(
+        lastOrder.orderNumber.replace("#ORDER", "")
+      );
+      nextNumber = lastNum + 1;
+    }
+
+    const orderNumber = `#ORDER${String(nextNumber).padStart(4, "0")}`;
+    const orderAccessToken = crypto.randomBytes(32).toString("hex");
+
+    const newOrder = await Order.create({
+      orderNumber,
+      restaurant,
+      table: table || null,
+      orderType: orderType || "DINE_IN",
+      items: formattedItems,
+      subTotal: Number(subTotal),
+      taxAmount: Number(taxAmount),
+      grandTotal: Number(grandTotal),
+      orderAccessToken
+    });
+
+    if (table) {
+      await Table.findByIdAndUpdate(table, { status: "occupied" });
+    }
+
+    // 🔥 Emit new order to restaurant
+    const roomName = `restaurant_${restaurant}`;
+    console.log("🔥 Emitting newOrder to restaurant room:", roomName);
+    console.log("🔥 Order data being emitted:", {
+      orderId: newOrder._id,
+      orderNumber: newOrder.orderNumber,
+      restaurantId: restaurant
+    });
+    io.to(roomName).emit("newOrder", newOrder);
+
+    res.cookie("orderToken", orderAccessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      maxAge: 1000 * 60 * 60 * 3
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Order created successfully",
+      order: newOrder
+    });
+
+  } catch (error) {
+    console.error("Place Order Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
 };
-
-
 
 
 
 export const getOrders = async (req, res) => {
     try {
         const {
-            restaurant,
             status,
             page = 1,
             limit = 10
@@ -971,7 +1155,9 @@ export const getOrders = async (req, res) => {
 
         const filter = {};
 
-        if (restaurant) filter.restaurant = restaurant;
+        // 🔥 Automatically logged-in user ka restaurant
+        filter.restaurant = req.user.restaurant;
+
         if (status) filter.orderStatus = status;
 
         const skip = (Number(page) - 1) * Number(limit);
@@ -1004,65 +1190,158 @@ export const getOrders = async (req, res) => {
 };
 
 
-export const updateOrderStatus = async (req, res) => {
-    try {
-        const { orderId } = req.params;
-        const { status } = req.body;
 
-        const allowedStatuses = [
-            "NEW",
-            "PREPARING",
-            "READY",
-            "SERVED",
-            "COMPLETED",
-            "CANCELLED"
-        ];
+export const updatePreparationTime = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { preparationTime } = req.body;
+    console.log("Bhai mere body me kya kyta aa hrai",req.body)
 
-        if (!allowedStatuses.includes(status)) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid order status"
-            });
-        }
-
-        const order = await Order.findById(orderId);
-
-        if (!order) {
-            return res.status(404).json({
-                success: false,
-                message: "Order not found"
-            });
-        }
-
-        order.orderStatus = status;
-        await order.save();
-
-        /* ===== TABLE FREE LOGIC ===== */
-        if (
-            (status === "COMPLETED" || status === "CANCELLED") &&
-            order.table
-        ) {
-            await Table.findByIdAndUpdate(order.table, {
-                status: "free"
-            });
-        }
-
-        return res.json({
-            success: true,
-            message: "Order status updated successfully",
-            order
-        });
-
-    } catch (error) {
-        console.error("Update Order Status Error:", error);
-        return res.status(500).json({
-            success: false,
-            message: "Internal Server Error"
-        });
+    if (!preparationTime || preparationTime < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid preparation time"
+      });
     }
+
+    const order = await Order.findById(id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found"
+      });
+    }
+
+    order.preparationTime = preparationTime;
+    await order.save();
+
+    const io = getIO();
+
+    // Emit to restaurant room (for kitchen display)
+    const roomName = `restaurant_${order.restaurant.toString()}`;
+    console.log("🔥 Emitting preparationTimeUpdated to restaurant room:", roomName);
+    console.log("🔥 Preparation time data:", {
+      orderId: order._id,
+      preparationTime: preparationTime,
+      restaurantId: order.restaurant.toString()
+    });
+    
+    io.to(roomName).emit("preparationTimeUpdated", {
+      orderId: order._id,
+      preparationTime: preparationTime
+    });
+
+    // Emit to order-specific room (for customer)
+    if (order.orderAccessToken) {
+      const orderRoomName = `order_${order.orderAccessToken}`;
+      console.log("🔥 Emitting preparationTimeUpdated to order room:", orderRoomName);
+      io.to(orderRoomName).emit("preparationTimeUpdated", {
+        orderId: order._id,
+        preparationTime: preparationTime
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Preparation time updated successfully",
+      order
+    });
+
+  } catch (error) {
+    console.error("Update Preparation Time Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error"
+    });
+  }
 };
 
+export const updateOrderStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
 
+    const allowedStatuses = [
+      "NEW",
+      "PREPARING",
+      "READY",
+      "SERVED",
+      "COMPLETED",
+      "CANCELLED"
+    ];
+
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid order status"
+      });
+    }
+
+    const order = await Order.findById(id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found"
+      });
+    }
+
+    order.orderStatus = status;
+    await order.save();
+
+    const io = getIO();
+
+    // Emit to restaurant room (for kitchen display)
+    const roomName = `restaurant_${order.restaurant.toString()}`;
+    console.log(" Emitting orderUpdated to restaurant room:", roomName);
+    console.log(" Order data:", {
+      orderId: order._id,
+      orderNumber: order.orderNumber,
+      oldStatus: order.orderStatus,
+      newStatus: status,
+      restaurantId: order.restaurant.toString()
+    });
+    
+    io.to(roomName).emit("orderUpdated", order);
+
+    // Emit to order-specific room (for customer)
+    if (order.orderAccessToken) {
+      const orderRoomName = `order_${order.orderAccessToken}`;
+      console.log(" Emitting orderUpdated to order room:", orderRoomName);
+      io.to(orderRoomName).emit("orderUpdated", order);
+    }
+
+    // Emit to specific user (if available)
+    if (order.user) {
+      io.to(`user_${order.user.toString()}`)
+        .emit("orderUpdated", order);
+    }
+
+    // Free table
+    if (
+      (status === "COMPLETED" || status === "CANCELLED") &&
+      order.table
+    ) {
+      await Table.findByIdAndUpdate(order.table, {
+        status: "free"
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Order status updated successfully",
+      order
+    });
+
+  } catch (error) {
+    console.error("Update Order Status Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error"
+    });
+  }
+};
 
 export const getMyOrder = async (req, res) => {
     try {
@@ -1313,8 +1592,7 @@ export const getMyOrder = async (req, res) => {
 //     }
 // };
 
-import puppeteerCore from "puppeteer-core";
-import chromium from "@sparticuz/chromium";
+
 // export const downloadInvoice = async (req, res) => {
 //   let browser;
 

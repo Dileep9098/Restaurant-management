@@ -49,8 +49,8 @@ import {
   logout,
   register,
   resetPassword,
-  submitKYC,
-  updateKYCStatus,
+  // submitKYC,
+  // updateKYCStatus,
   updatePassword,
   updateRolePermission,
   updateUser,
@@ -101,21 +101,21 @@ router.put("/admin/update-user-role/:id", updateRolePermission);
 // KYC Routes 
 
 //  User submits KYC
-router
-  .route("/kyc/submit")
-  .post(isAuthenticateUser, uploadKYC.fields([
-    { name: "aadharFrontImage", maxCount: 1 },
-    { name: "aadharBackImage", maxCount: 1 }
-  ]), submitKYC);
+// router
+//   .route("/kyc/submit")
+//   .post(isAuthenticateUser, uploadKYC.fields([
+//     { name: "aadharFrontImage", maxCount: 1 },
+//     { name: "aadharBackImage", maxCount: 1 }
+//   ]), submitKYC);
 
 // Admin updates KYC status
-router
-  .route("/admin/kyc-status")
-  .put(isAuthenticateUser, authorizeRoles("admin"), updateKYCStatus);
+// router
+//   .route("/admin/kyc-status")
+//   .put(isAuthenticateUser, authorizeRoles("admin"), updateKYCStatus);
 
 // 👁️ Admin gets all pending KYC requests
-router
-  .route("/admin/kyc-pending")
-  .get(isAuthenticateUser, authorizeRoles("admin"), getPendingKYCUsers);
+// router
+//   .route("/admin/kyc-pending")
+//   .get(isAuthenticateUser, authorizeRoles("admin"), getPendingKYCUsers);
 
 export default router;

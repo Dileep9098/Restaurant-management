@@ -8,7 +8,7 @@ import crypto from "crypto";
 import { sendOTPEmail } from "../utils/sendOTPEmail.js";
 
 import { fileURLToPath } from "url";
-import { io } from "../server.js";
+// import { io } from "../server.js";
 import Notification from "../models/notificationModel.js";
 import { use } from "react";
 import RolePermissionModel from "../models/RolePermissionModel.js";
@@ -519,43 +519,43 @@ export const getSingleUser = async (req, res, next) => {
 // KYC Request send 
 
 
-export const submitKYC = async (req, res) => {
-  const userId = req.user._id;
-  const { aadharNumber, pinNumber } = req.body;
-  const frontImage = req.files?.aadharFrontImage?.[0]?.filename;
-  const backImage = req.files?.aadharBackImage?.[0]?.filename;
+// export const submitKYC = async (req, res) => {
+//   const userId = req.user._id;
+//   const { aadharNumber, pinNumber } = req.body;
+//   const frontImage = req.files?.aadharFrontImage?.[0]?.filename;
+//   const backImage = req.files?.aadharBackImage?.[0]?.filename;
 
-  if (!aadharNumber || !pinNumber || !frontImage || !backImage) {
-    return res.status(400).json({ message: "All KYC fields are required" });
-  }
+//   if (!aadharNumber || !pinNumber || !frontImage || !backImage) {
+//     return res.status(400).json({ message: "All KYC fields are required" });
+//   }
 
-  // const hashedPin = await bcrypt.hash(pinNumber, 10);
+//   // const hashedPin = await bcrypt.hash(pinNumber, 10);
 
-  const user = await User.findByIdAndUpdate(userId, {
-    aadharNumber,
-    pinNumber,
-    aadharFrontImage: frontImage,
-    aadharBackImage: backImage,
-    kycStatus: 'PENDING'
-  }, { new: true });
+//   const user = await User.findByIdAndUpdate(userId, {
+//     aadharNumber,
+//     pinNumber,
+//     aadharFrontImage: frontImage,
+//     aadharBackImage: backImage,
+//     kycStatus: 'PENDING'
+//   }, { new: true });
 
-  const admins = await User.find({ role: "admin" });
+//   const admins = await User.find({ role: "admin" });
 
-  for (const admin of admins) {
-    const notification = new Notification({
-      sender: userId,
-      receiver: admin._id,
-      message: `${req.user.name} has submitted a KYC request.`,
-      type: "KYC"
-    });
+//   for (const admin of admins) {
+//     const notification = new Notification({
+//       sender: userId,
+//       receiver: admin._id,
+//       message: `${req.user.name} has submitted a KYC request.`,
+//       type: "KYC"
+//     });
 
-    await notification.save();
-    io.to((admin._id).toString()).emit("new_kyc", notification);
-  }
+//     await notification.save();
+//     io.to((admin._id).toString()).emit("new_kyc", notification);
+//   }
 
 
-  res.status(200).json({ message: "KYC submitted successfully", user });
-};
+//   res.status(200).json({ message: "KYC submitted successfully", user });
+// };
 
 
 // Update Admin  KYC

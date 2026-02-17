@@ -150,7 +150,6 @@ import cookieParser from "cookie-parser";
 import path from "path";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import { Server } from "socket.io";
 
 
 import user from "./routes/userRoute.js"

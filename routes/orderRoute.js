@@ -15,7 +15,8 @@
 
 
 import express from "express";
-import { downloadInvoice, getMyOrder, getOrders, placeOrder, updateOrderStatus } from "../controllers/orderController.js";
+import { downloadInvoice, getMyOrder, getOrders, placeOrder, updateOrderStatus, updatePreparationTime } from "../controllers/orderController.js";
+import auth from "../middleware/auth.js";
 
 
 const router = express.Router();
@@ -24,11 +25,13 @@ const router = express.Router();
 router.post( "/place-order", placeOrder);
 
 
-router.get( "/get-all-order", getOrders);
+router.get( "/get-all-order",auth, getOrders);
 router.get("/get-my-orders",getMyOrder)
 
 
-router.put( "/:orderId/status", updateOrderStatus);
+router.put( "/update-order-stauts/:id", auth, updateOrderStatus);
+
+router.put( "/update-preparation-time/:id", auth, updatePreparationTime);
 
 router.get("/download-invoice/:id", downloadInvoice);
 
