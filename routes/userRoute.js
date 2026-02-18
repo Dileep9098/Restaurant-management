@@ -78,7 +78,7 @@ router.route("/otp-verified").post(verifyOTP);
 router.route("/forgote-password").post(forgotPassword);
 router.route("/reset-password/:token").post(resetPassword);
 router.route("/update-password").post(isAuthenticateUser, updatePassword);
-router.route("/logout").get(isAuthenticateUser, logout); 
+router.route("/logout").get(auth, logout); 
 router.route("/me").get(auth, getUserDetails);
 router.route("/admin/create-user").post(auth, createAdminUser);
 
