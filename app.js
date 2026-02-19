@@ -167,6 +167,7 @@ import menuItemRoutes from "./routes/menuItemRoutes.js";
 import menuManagementCommonRoutes from "./routes/menuManagementCommonRoutes.js";
 import customerMenuRoute from "./routes/customerMenuRoutes.js";
 import OrderRoute from "./routes/orderRoute.js"
+import InventoryRoute from "./routes/inventoryRoutes.js"
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -245,6 +246,7 @@ app.use("/api/v1", menuItemRoutes)
 app.use("/api/v1", menuManagementCommonRoutes)
 app.use("/api/v1", customerMenuRoute)
 app.use("/api/v1", OrderRoute)
+app.use("/api/v1", InventoryRoute)
 
 // app.get('*', (req, res) => {
 //   res.sendFile(path.resolve(__dirname, "bulk-message", "dist", "index.html"));

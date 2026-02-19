@@ -59,7 +59,7 @@ import {
 
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-import { authorizeRoles, isAuthenticateUser } from "../utils/auth.js";
+import { authorizeRoles } from "../utils/auth.js";
 import { uploadKYC } from "../middleWares/kyc.js";
 import auth from "../middleware/auth.js";
 import checkPermission from "../middleware/checkPermission.js";
@@ -77,17 +77,17 @@ router.route("/login").post(login);
 router.route("/otp-verified").post(verifyOTP);
 router.route("/forgote-password").post(forgotPassword);
 router.route("/reset-password/:token").post(resetPassword);
-router.route("/update-password").post(isAuthenticateUser, updatePassword);
-router.route("/logout").get(isAuthenticateUser, logout); 
+router.route("/update-password").post(auth, updatePassword);
+router.route("/logout").get(auth, logout); 
 router.route("/me").get(auth, getUserDetails);
 router.route("/admin/create-user").post(auth, createAdminUser);
 
 router.route("/get-all-user").get( getAllUser);
 router.route("/get-all-restaurent-user").get(auth, getAllRestaurentUser);
-router.route("/update-user/:id").put(isAuthenticateUser, updateUser);
+router.route("/update-user/:id").put(auth, updateUser);
 router.route("/delete-user/:id").delete(auth, checkPermission("user.delete"), deleteUser);
-router.route("/admin/single-user/:id").get(isAuthenticateUser, authorizeRoles("admin"), getSingleUser)
-// router.route("/admin/update-user-role/:id").put(isAuthenticateUser, authorizeRoles("admin"), updateRolePermission)
+router.route("/admin/single-user/:id").get(auth, authorizeRoles("admin"), getSingleUser)
+// router.route("/admin/update-user-role/:id").put(auth, authorizeRoles("admin"), updateRolePermission)
 router.put("/admin/update-user-role/:id", updateRolePermission);
 
 
